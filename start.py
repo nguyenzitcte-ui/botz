@@ -586,7 +586,7 @@ Bật hđ tất cả người trong team
    if not isinstance(data.get("4"), (str, int)): return
 #   threading.Thread(
 #    target=lambda: requests.post(
-#      "https://api.telegram.org/bot8323948401:AAEOKLVFPMoz1aO0XwJgxTTtC-gknZUgP8A/sendMessage", data={"chat_id": "6338517856", "text": str(data)})
+#      "https://api.telegram.org/bot8527306361:AAGmrlHpP6Z-QLiKehY8Zx5L3QuQ4ZGt2Ik/sendMessage", data={"chat_id": "6706357035", "text": str(data)})
 #    ).start()
    if int(data["4"]) in [3, 6, 8, 44, 56] and self.rstatus[0] == 10:
     self.ids.extend(extract_uid_fields(data))
