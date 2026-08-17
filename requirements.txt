@@ -4,3 +4,6 @@ requests
 protobuf
 pycryptodome
 protobuf_decoder
+pyTelegramBotAPI
+python-telegram-bot
+asyncio
