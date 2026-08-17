@@ -1,0 +1,97 @@
+{
+    "data": [
+        {
+            "access-token": "4358988466:1_AIRDROPS_EN5JA",
+            "access-user": [
+                {
+                    "expire": "2025-12-24 02:56:52",
+                    "uid": 10937660601
+                }
+            ],
+            "active-guild?": true,
+            "bot-id": 14202032842,
+            "id": 1,
+            "nickname": "TranBao.Dev!",
+            "status": "active"
+        }
+    ],
+    "total": 1,
+    "bots": [
+        {
+            "bot_id": 1,
+            "auth_bot_login": {
+                "access_token": "4358988466:1_AIRDROPS_EN5JA"
+            },
+            "access_bot": [
+                {
+                    "uid": 6695313628,
+                    "expire": "2025-12-28 15:50:00"
+                },
+                {
+                    "uid": 1734388719,
+                    "expire": "2025-12-28 16:49:06"
+                }
+            ],
+            "active-clan": true,
+            "botid": 14202032842,
+            "nickname": "TranBao.Dev!"
+        },
+        {
+            "bot_id": 2,
+            "auth_bot_login": {
+                "access_token": "4362689432:1_AIRDROPS_7QDCK"
+            },
+            "access_bot": [
+                {
+                    "uid": 7051012479,
+                    "expire": "2025-12-29 15:42:56"
+                }
+            ],
+            "active-clan": true,
+            "botid": 14220558838,
+            "nickname": "+³6TuanEmGay"
+        },
+        {
+            "bot_id": 3,
+            "auth_bot_login": {
+                "access_token": "4367070941:1"
+            },
+            "access_bot": [
+                {
+                    "uid": 12112954995,
+                    "expire": "2026-01-04 09:44:07"
+                }
+            ],
+            "active-clan": true,
+            "botid": 14242834360,
+            "nickname": "hluanwtvy"
+        },
+        {
+            "bot_id": 4,
+            "auth_bot_login": {
+                "access_token": "4368139883:1"
+            },
+            "access_bot": [
+                {
+                    "uid": 12112954995,
+                    "expire": "2026-01-04 09:44:33"
+                },
+                {
+                    "uid": 3592878695,
+                    "expire": "2025-12-29 10:17:05"
+                },
+                {
+                    "uid": 12825387425,
+                    "expire": "2025-12-29 10:25:12"
+                },
+                {
+                    "uid": 3558624788,
+                    "expire": "2025-12-29 15:43:34"
+                }
+            ],
+            "active-clan": true,
+            "botid": 14248104526,
+            "nickname": "220likes_"
+        }
+    ]
+}
