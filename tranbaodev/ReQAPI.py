@@ -1,10 +1,78 @@
-import requests, json, base64, time, struct, datetime, re
+import requests, json, base64, time, struct, datetime, re, os, string, threading
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-from protobuf_decoder.protobuf_decoder import Parser
 from typing import Dict, Any, Optional, Tuple, Union, TypedDict, List
 from dataclasses import dataclass
 from enum import IntEnum
+
+from protobuf_decoder.protobuf_decoder import Parser
+def parse_results(parsed_results):
+ result_dict = {}
+ for result in parsed_results:
+  if result.field not in result_dict:
+   result_dict[result.field] = []
+  field_data = {}
+  if result.wire_type in ["varint", "string", "bytes"]:
+   field_data = result.data
+  elif result.wire_type == "length_delimited":
+   field_data = parse_results(result.data.results)
+  result_dict[result.field].append(field_data)
+ return {
+  key: value[0] if len(value) == 1
+  else value for key, value in result_dict.items()
+  }
+
+protobuf_dec = lambda data: json.dumps(parse_results(
+ Parser().parse(data)
+ ), ensure_ascii=False)
+def Encrypt(value):
+ value = int(value)
+ result = []
+ while value > 0x7F:
+  result.append((value & 0x7F) | 0x80)
+  value >>= 7
+ result.append(value)
+ return bytes(result)
+
+def Decrypt(value):
+ result, shift = 0, 0
+ for byte in bytes.fromhex(value):
+  result |= (byte & 0x7F) << shift
+  if not (byte & 0x80):
+   break
+  shift += 7
+ return result
+
+def AES_CBC128(data, key, iv):
+ cipher = AES.new(key, AES.MODE_CBC, iv)
+ return cipher.encrypt(pad(data, 0x10))
+
+def create_varint_field(field_number, value):
+ field_header = (field_number << 3) | 0
+ return Encrypt(field_header) + Encrypt(value)
+
+def create_length_delimited_field(field_number, value):
+ field_header = (field_number << 3) | 2
+ encoded_value = value.encode() if isinstance(value, str) else value
+ return Encrypt(field_header) + Encrypt(len(encoded_value)) + encoded_value
+
+def pb_encode(fields):
+ packet = bytearray()
+ for field, value in fields.items():
+  field = int(field)
+  if isinstance(value, list):
+   for item in value:
+    if isinstance(item, dict):
+     packet.extend(create_length_delimited_field(field, pb_encode(item)))
+  elif isinstance(value, dict):
+   nested_packet = pb_encode(value)
+   packet.extend(create_length_delimited_field(field, nested_packet))
+  elif isinstance(value, int):
+   packet.extend(create_varint_field(field, value))
+  elif isinstance(value, str) or isinstance(value, bytes):
+   packet.extend(create_length_delimited_field(field, value))
+ return bytes(packet)
+
 
 class ProtoBuf:
  def __init__(self, data):
@@ -123,76 +191,6 @@ class ProtoBuf:
   return []
 
 
-def Encrypt(value):
- value = int(value)
- result = []
- while value > 0x7F:
-  result.append((value & 0x7F) | 0x80)
-  value >>= 7
- result.append(value)
- return bytes(result)
-
-def Decrypt(value):
- result, shift = 0, 0
- for byte in bytes.fromhex(value):
-  result |= (byte & 0x7F) << shift
-  if not (byte & 0x80):
-   break
-  shift += 7
- return result
-
-def parse_results(parsed_results):
- result_dict = {}
- for result in parsed_results:
-  if result.field not in result_dict:
-   result_dict[result.field] = []
-  field_data = {}
-  if result.wire_type in ["varint", "string", "bytes"]:
-   field_data = result.data
-  elif result.wire_type == "length_delimited":
-   field_data = parse_results(result.data.results)
-  result_dict[result.field].append(field_data)
- return {
-  key: value[0] if len(value) == 1
-  else value for key, value in result_dict.items()
-  }
-
-protobuf_dec = lambda data: json.dumps(parse_results(
- Parser().parse(data)
- ), ensure_ascii=False)
-
-def AES_CBC128(data, key, iv):
- cipher = AES.new(key, AES.MODE_CBC, iv)
- return cipher.encrypt(pad(data, 0x10))
-
-def create_varint_field(field_number, value):
- field_header = (field_number << 3) | 0
- return Encrypt(field_header) + Encrypt(value)
-
-def create_length_delimited_field(field_number, value):
- field_header = (field_number << 3) | 2
- encoded_value = value.encode() if isinstance(value, str) else value
- return Encrypt(field_header) + Encrypt(len(encoded_value)) + encoded_value
-
-def pb_encode(fields):
- packet = bytearray()
- for field, value in fields.items():
-  if isinstance(value, list):
-   for item in value:
-    if isinstance(item, dict):
-     packet.extend(create_length_delimited_field(field, pb_encode(item)))
-  elif isinstance(value, dict):
-   nested_packet = pb_encode(value)
-   packet.extend(create_length_delimited_field(field, nested_packet))
-  elif isinstance(value, int):
-   packet.extend(create_varint_field(field, value))
-  elif isinstance(value, str) or isinstance(value, bytes):
-   packet.extend(create_length_delimited_field(field, value))
- return bytes(packet)
-
-
-
-
 class gayerr(Exception): pass
 @dataclass
 class account_data:
@@ -238,18 +236,20 @@ def storeApps(package):
 
 def bdversion(ver:str=storeApps("details?id=com.dts.freefireth")):
  if not ver:ver=storeApps("details?id=com.dts.freefireth")
- I="https://bdversion.ggbluefox.com/live/ver.php{}"
+ I="https://version.common.redflamenco.com/live/ver.php{}"
  II="?version=%s&lang=vi&device=android&region=VN" % ver
  res=requests.get(I.format(II))
  return res.json()
 
-# Details: https://api.freefireservice.dnc.su/ff.status
-# Telegram: @gringo_modz
 
+
+
+
+detail_vers = bdversion()
+print(detail_vers["remote_version"], detail_vers["latest_release_version"], detail_vers["server_url"])
 class APIClient:
  def __init__(self):
   self._data = account_data()
-  detail_vers = bdversion()
   self.is_emulator = False
   self.language = "vn"
   self.base_url = detail_vers["server_url"]
@@ -258,11 +258,8 @@ class APIClient:
   self.key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
   self.iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
   self.session = requests.Session()
-  self.session.headers.update({
-  "User-Agent": "UnityPlayer/2022.3.47f1(UnityWebRequest/1.0,libcurl/8.5.0- DEV)",  "X-GA": "v1 1", "Content-Type": "application/x-www-form-urlencoded",
-  "Accept-Encoding": "deflate, gzip", "Accept": "*/*","X-Unity-Version": "2022.3.47f1",
-  "Host": "loginbp.ggblueshark.com", "ReleaseVersion": self.release_version
-  })
+
+  self.session.headers.update({'Authorization': 'Bearer', 'X-Ga': 'v1 1', 'X-Unity-Version': '2022.3.47f1', 'Content-Type': 'application/x-www-form-urlencoded', 'Releaseversion': self.release_version, 'User-Agent': 'UnityPlayer/2022.3.47f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)', 'Accept': '*/*', 'Accept-Encoding': 'gzip, br', 'Cf-Visitor': '{"scheme":"https"}'})
 
  def auth_guest_token(self, uid, password):
   payload = {
@@ -307,56 +304,66 @@ class APIClient:
   except Exception as e: pass
 
  def MajorLogin(self):
-  fields = {}
-  fields[3] = time.strftime("%Y-%m-%d %H:%M:%S")
-  fields[4] = "free fire"
-  fields[5] = 1
-  fields[7] = self.client_version
-  fields[8] = "Android OS 9 / API-28 (PI/rel.cjw.20220518.114133)"
-  fields[9] = "Handheld"
-  fields[10] = "O2"
-  fields[11] = "WIFI"
-  fields[12] = 1280
-  fields[13] = 720
-  fields[15] = "x86-64 SSE3 SSE4.1 SSE4.2 AVX AVX2 | 2400 | 4"
-  fields[16] = 5951
-  fields[17] = "Adreno (TM) 640"
-  fields[18] = "OpenGL ES 3.0"
-  fields[19] = "Google|74b585a9-0268-4ad3-8f36-ef41d2e53610"
-  fields[20] = "172.123.44.0"
-  fields[21] = self.language
-  fields[22] = str(self._data.open_id)
-  fields[23] = int(self._data.login_platform)
-  fields[24] = "Handheld"
-  fields[25] = "Asus ASUS_I005DA"
-  fields[29] = str(self._data.access_token)
-  fields[30] = 1
-  fields[41] = "O2"
-  fields[42] = "WIFI"
-  fields[57] = bytes([49, 97, 99, 52, 98, 56, 48, 101, 99, 102, 48, 52, 55, 56, 97, 52, 52, 50, 48, 51, 98, 102, 56, 102, 97, 99, 54, 49, 50, 48, 102, 53])
-  fields[60] = 32969
-  fields[61] = 29901
-  fields[62] = 2479
-  fields[63] = 900
-  fields[64] = 31298
-  fields[65] = 32969
-  fields[66] = 31298
-  fields[67] = 32969
-  fields[70] = 4
-  fields[73] = 3
-  fields[76] = 1
-  fields[78] = 6
-  fields[79] = 1
-  fields[85] = 3
-  fields[88] = 4
-  fields[93] = "3rd_party" if self.is_emulator else "android"
-  fields[94] = "KqsHT0qaTCGUXRYnJ0Rqk4rOvTBtqRFCqrxSLo/afYBAXyCA5v4zw5F/rWCSaZuZONmV1TMDDY0q0rZ4Kys1ITUFfGM=" if self.is_emulator else "KqsHT1r9GNgPJ0nDb82dJ+mJ4wwzqfR9fk7HviQ+4tx58ObceZuLaFrmk9qaVIP+qB3CV0DG40yTeS+2h1GA1rqKtMVPLfDUz7rIThfm4ZKedCh3"
-  fields[95] = 111111
-  fields[97] = 1
-  fields[98] = 1
-  fields[99] = str(self._data.main_active_platform)
-  fields[100] = str(self._data.platform)
-  fields[102] = bytes([71, 87, 76, 65, 86, 89, 9, 4, 78, 1, 12, 19, 15, 4, 64, 94, 65, 57, 89, 83, 15, 80, 91, 61, 15, 81, 91, 110, 82, 9, 60, 10, 84, 50])
+  fields = {'10': b'Viettel',
+ '100': str(self._data.login_platform),
+ '102': b'D\\\x16A\x02T\rV8',
+ '11': b'WIFI',
+ '12': 1666,
+ '13': 750,
+ '14': b'480',
+ '15': b'ARM64 FP ASIMD AES | 2000 | 8',
+ '16': 7535,
+ '17': b'Mali-G57 MC3',
+ '18': b'OpenGL ES 3.2 v1.r32p1-01eac0.461cd25a1c7796cc6d3ad05234c053ac',
+ '19': b'Google|fe4ce5a1-a190-41ab-82c8-03480f84a055',
+ '20': b'123.200.200.200',
+ '21': b'vn',
+ '22': self._data.open_id,
+ '23': str(self._data.main_active_platform),
+ '24': b'Handheld',
+ '25': b'OPPO CPH2161',
+ '26': b'VN',
+ '29': self._data.access_token,
+ '3': time.strftime("%Y-%m-%d %H:%M:%S"),
+ '30': 1,
+ '4': b'free fire',
+ '41': b'Viettel',
+ '42': b'WIFI',
+ '5': 1,
+ '57': b'7428b253defc164018c604a1ebbfebdf',
+ '60': 111125,
+ '61': 24794,
+ '62': 646,
+ '64': 25013,
+ '65': 111125,
+ '66': 25013,
+ '67': 111125,
+ '7': self.client_version,
+ '73': 1,
+ '74': b'/data/app/~~n7knmMB01-DLeDewi_wxUg==/com.dts.freefireth-VuCf1iCq4HpR'
+       b'eALgdQ_S8A==/lib/arm64',
+ '76': 1,
+ '77': b'4c322aeb56444feaa151d1ea91a8f7f2|/data/app/~~n7knmMB01-DLeDewi_wxUg='
+       b'=/com.dts.freefireth-VuCf1iCq4HpReALgdQ_S8A==/base.apk',
+ '78': 3,
+ '79': 2,
+ '8': b'Android OS 12 / API-31 (SP1A.210812.016/Q.GDPR.202206202156)',
+ '81': b'64',
+ '83': b'2019120776',
+ '85': 3,
+ '86': b'OpenGLES2',
+ '87': 4095,
+ '88': 8,
+ '9': b'Handheld',
+ '92': 5131,
+ '93': b'android',
+ '94': b'KqsHT5IZGShh357jM5Y3aYhz8HebbInIx4a+YqQHn93f9Reo3WlXAjYW6pc3yDbOvez9'
+       b'b4ddq4HBemChGvGgZ3iWLAk=',
+ '95': 111207,
+ '96': b'{"cur_rate":[60,90],"support_etc2":false}',
+ '97': 1,
+ '99': str(self._data.platform)}
+
   try:
    response = self.session.post(
     "%sMajorLogin" % self.base_url,
@@ -374,55 +381,69 @@ class APIClient:
    self._data.login_time = res.get("21")
    self._data.key = pb.EXTRACT_FIELDS([22], mode="bytes")
    self._data.iv = pb.EXTRACT_FIELDS([23], mode="bytes")
-  except Exception as e: pass
+  except Exception as e: print(2, e)
 
  def GetLoginData(self):
   try:
-   tokendec = gringay.tokendecode(self._data.login_token)
-   fields = {}
-   fields[3]  = time.strftime("%Y-%m-%d %H:%M:%S")
-   fields[7]  = self.client_version
-   fields[23] = int(tokendec.get("external_type", ""))
-   fields[29] = str(tokendec.get("external_id", ""))
-   fields[4]  = "free fire"
-   fields[5]  = 1
-   fields[8]  = "Android OS 9 / API-28 (PI/rel.cjw.20220518.114133)"
-   fields[9]  = "Handheld"
-   fields[10] = "Verizon Wireless"
-   fields[11] = "WIFI"
-   fields[12] = 1280
-   fields[13] = 960
-   fields[15] = "x86-64 SSE3 SSE4.1 SSE4.2 AVX AVX2 | 2400 | 4"
-   fields[17] = "Adreno (TM) 640"
-   fields[18] = "OpenGL ES 3.0"
-   fields[19] = "Google|d00d071a-5662-486c-82e2-5dc03c5cb82e"
-   fields[20] = "20.81.159.0"
-   fields[21] = self.language
-   fields[22] = "40254b1770e14131d3879ea51acb93ad"
-   fields[24] = "Handheld"
-   fields[25] = "Asus ASUS_Z01QD"
-   fields[41] = "Verizon Wireless"
-   fields[42] = "WIFI"
-   fields[57] = str(tokendec.get("signature_md5", ""))
-   fields[60] = 32969
-   fields[61] = 29665
-   fields[62] = 2479
-   fields[63] = 900
-   fields[64] = 31063
-   fields[65] = 32969
-   fields[66] = 31063
-   fields[67] = 32969
-   fields[70] = 4
-   fields[73] = 3
-   fields[76] = 1
-   fields[78] = 6
-   fields[79] = 1
-   fields[85] = 3
-   fields[88] = 4
-   fields[92] = 11111
-   fields[95] = 11111
-   fields[97] = 1
-   fields[98] = 1
+   fields = {'10': b'Viettel',
+ '100': str(self._data.login_platform),
+ '102': b'D\\\x16A\x02T\rV8',
+ '11': b'WIFI',
+ '12': 1666,
+ '13': 750,
+ '14': b'480',
+ '15': b'ARM64 FP ASIMD AES | 2000 | 8',
+ '16': 7535,
+ '17': b'Mali-G57 MC3',
+ '18': b'OpenGL ES 3.2 v1.r32p1-01eac0.461cd25a1c7796cc6d3ad05234c053ac',
+ '19': b'Google|fe4ce5a1-a190-41ab-82c8-03480f84a055',
+ '20': b'171.245.232.205',
+ '21': b'vn',
+ '22': self._data.open_id,
+ '23': str(self._data.main_active_platform),
+ '24': b'Handheld',
+ '25': b'OPPO CPH2161',
+ '26': b'VN',
+ '29': self._data.access_token,
+ '3': time.strftime("%Y-%m-%d %H:%M:%S"),
+ '30': 1,
+ '4': b'free fire',
+ '41': b'Viettel',
+ '42': b'WIFI',
+ '5': 1,
+ '57': b'7428b253defc164018c604a1ebbfebdf',
+ '60': 111125,
+ '61': 24794,
+ '62': 646,
+ '64': 25013,
+ '65': 111125,
+ '66': 25013,
+ '67': 111125,
+ '7': self.client_version,
+ '73': 1,
+ '74': b'/data/app/~~n7knmMB01-DLeDewi_wxUg==/com.dts.freefireth-VuCf1iCq4HpR'
+       b'eALgdQ_S8A==/lib/arm64',
+ '76': 1,
+ '77': b'4c322aeb56444feaa151d1ea91a8f7f2|/data/app/~~n7knmMB01-DLeDewi_wxUg='
+       b'=/com.dts.freefireth-VuCf1iCq4HpReALgdQ_S8A==/base.apk',
+ '78': 3,
+ '79': 2,
+ '8': b'Android OS 12 / API-31 (SP1A.210812.016/Q.GDPR.202206202156)',
+ '81': b'64',
+ '83': b'2019120776',
+ '85': 3,
+ '86': b'OpenGLES2',
+ '87': 4095,
+ '88': 8,
+ '9': b'Handheld',
+ '92': 5131,
+ '93': b'android',
+ '94': b'KqsHT5IZGShh357jM5Y3aYhz8HebbInIx4a+YqQHn93f9Reo3WlXAjYW6pc3yDbOvez9'
+       b'b4ddq4HBemChGvGgZ3iWLAk=',
+ '95': 111207,
+ '96': b'{"cur_rate":[60,90],"support_etc2":false}',
+ '97': 1,
+ '99': str(self._data.platform)}
    response = self.session.post(
      "%s/GetLoginData" % self._data.base_url,
      headers = {
@@ -440,7 +461,7 @@ class APIClient:
    sv, chat = data.get("14"), data.get("32")
    if len(chat) > 6: self._data.chat_port, self._data.chat_ip = chat[-5:], chat[:-6]
    if len(sv) > 6: self._data.online_port, self._data.online_ip = sv[-5:], sv[:-6]
-  except Exception as e: pass
+  except Exception as e: print(1, e)
 
  def TAO_PACKET_XT(self) -> str:
   try:
