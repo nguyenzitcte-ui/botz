@@ -248,7 +248,7 @@ Bạn đã nhận được 24 giờ dùng thử bot
 Mày không có quyền sử dụng bot
 
 Dịch vụ  LIKES, BOT, API, vv:
-Telegram: @tranbaodev""")
+Telegram: @zitiuoi""")
 
    elif message.startswith("/bot"):
     message = """[b][c]------------------------------------
@@ -264,7 +264,7 @@ Service: LIKES - API - BOT - ETC
 
 Hello {}, 
 /start Để xem danh sách các lệnh
-Developer: @tranbaodev
+Developer: @zitiuoi
 Service: LIKES - API - BOT - Etc
 
 ------------------------------------"""
@@ -320,7 +320,7 @@ Service: LIKES - API - BOT - Etc
   [C678DD]return [ABB2BF]{{
     [E5C07B]uid[E5C07B]: [E5C07B]{}[ABB2BF],
     [E5C07B]name[ABB2BF]: [98C379]"{}"[ABB2BF],
-    [E5C07B]telegram[ABB2BF]: [98C379]"@TranBaoDev"[ABB2BF],
+    [E5C07B]telegram[ABB2BF]: [98C379]"@zitiuoi"[ABB2BF],
     [E5C07B]time[ABB2BF]: [98C379]"{}"[ABB2BF]
   [ABB2BF]}}
 [ABB2BF]}}""".format(uid, name, exps))
@@ -392,14 +392,14 @@ Bật hđ tất cả người trong team
     self._bot.reply(
         cid, type,
         "[b][c]Thông Tin Admin\n"
-        "[00FFFF]Name Admin :[00FF00]=> [FFFFFF]Trần Gia Bảo\n"
+        "[00FFFF]Name Admin :[00FF00]=> [FFFFFF]Nv Quốc Khánh\n"
         "[00FF00]FB:[FFFFFF] "
         "[1E8F1E]G[2FA02F]i[40B040]a[51C051] B[62D062]"
         "[73E073]a[84F084]o"
         "[C8FFC8] ([D9FFD9]O[E5FFE5]n[F0FFF0]e[F7FFF7]w[FFFFFF])\n\n"
         "[00FF90]Thông Tin MXH\n"
-        "[00FF00]TikTok:[FFFFFF] @TranBaoDev_\n"
-        "[00FF00]Tele🔕gram:[FFFFFF] @TranBaoDev\n\n"
+        "[00FF00]TikTok:[FFFFFF] @qkiuoi\n"
+        "[00FF00]Tele🔕gram:[FFFFFF] @zitiuoi\n\n"
         
          "[b][c]× Notes : Trước khi đánh giá t, đầu tiên hãy xem m ngang t chưa đã=))"
     )
@@ -598,7 +598,7 @@ Bật hđ tất cả người trong team
     rc = data.get("5").get("8")
     
     self.sock39801.send(self._bot.join_channel(uid, rc, None))
-    g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKES - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@tranbaodev & [00FF00]TikTok: [00FFFF]@tranbaodev_\n[000000]"%(grcolor(), grcolor())
+    g01 = "[B][c]\n[%s]Dịch vụ: [U]LIKES - BOT - API.[/U][%s]\n\nTelegram: [00FFFF]@zitiuoi & [00FF00]TikTok: [00FFFF]@qkiuoi\n[000000]"%(grcolor(), grcolor())
     g02 = "\n".join([f"[{grcolor()}]TRANBAODEV  " * 8 for _ in range(55)])
     self.sock39699.send(self._bot.reject_invite(random.choice([g01, g02]), uid, uid))
     
@@ -661,7 +661,7 @@ Bật hđ tất cả người trong team
       recruit_code = data.get("5", {}).get("17")
       self.sock39801.send(self._bot.join_channel(uid, recruit_code, None))
       time.sleep(0.5)
-      self._bot.reply(uid, None, "[B][C]Tất Cả Tránh Ra [00ffd4]Trần Gia Bảo Đến Chơi!\n\n× Tiktok: [00ffb3]@TranBaoDev_\n× Tel[c]egr[c]am: [00ffb3]@TranBaoDev\n× Facebook: [00ffb3]Gia Bảo (Onew)\n\nTrần Gia Bảo:\n[C0C0C0]Mọi Người Th[c]uê Bot Team 5-6 - Bot Emotes Bật Hành Động Sú[c]n[c]g 7 Ai Cũng Nhìn Thấy Được IB TikTok.")
+      self._bot.reply(uid, None, "[B][C]Tất Cả Tránh Ra [00ffd4]Nv Quốc Khánh Đến Chơi!\n\n× Tiktok: [00ffb3]@qkiuoi\n× Tel[c]egr[c]am: [00ffb3]@zitiuoi\n× Facebook: [00ffb3]Ng khánh (Onew)\n\nNv khánh:\n[C0C0C0]Mọi Người Th[c]uê Bot Team 5-6 - Bot Emotes Bật Hành Động Sú[c]n[c]g 7 Ai Cũng Nhìn Thấy Được IB TikTok.")
       self.rstatus = (10, '')
       self.ids.extend(extract_uid_fields(data))
      except Exception as e: self.rstatus, self.ids = (0, 0), []
