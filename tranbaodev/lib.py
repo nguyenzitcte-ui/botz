@@ -181,7 +181,7 @@ class AdminManager:
 
  @staticmethod
  def is_admin(bot_id, user_id):
-  default_admins = [6393938381]
+  default_admins = [165727218]
   if user_id in default_admins: return
   if AdminManager._cached_data is None:
    AdminManager._cached_data = AdminManager._load()
@@ -192,7 +192,7 @@ class AdminManager:
 
  @staticmethod
  def get_admins(bot_id):
-  default_admins = [6393938381]
+  default_admins = [165727218]
   if AdminManager._cached_data is None:
    AdminManager._cached_data = AdminManager._load()
 
